@@ -43,7 +43,6 @@ export type VL53L5CX = {
    * @returns nothing
    * @throws errors if something went awry
    */
-  comms_init: (cfg: number) => undefined;
 
   /**
    * Check if sensor is alive.
@@ -239,4 +238,5 @@ export type VL53L5CX = {
     calibration_data: ArrayBuffer,
     resolution: number
   ) => XtalkShapeAndStrength
+    comms_init: (cfg: number, bus: number) => undefined;
 };

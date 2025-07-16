@@ -1,3 +1,4 @@
+#include <fcntl.h>
 #include <stdio.h>
 
 #include <node_api.h>
@@ -183,38 +184,57 @@ bool register_fn(
 /// @param info Device addr as optional arg
 /// @return nothing
 napi_value cb_vl53l5cx_comms_init(napi_env env, napi_callback_info info) {
-    napi_value argv[MAX_ARGUMENTS] = {NULL};
+    napi_value argv[MAX_ARGUMENTS];
     napi_value this;
     size_t argc = MAX_ARGUMENTS;
-    void* data = NULL;
 
-    bool success = parse_args(
-        env, info, &argc, argv, &this, &data, 1, 1  // Take exactly 1 argument
-    );
-    if (!success) {
+    void* data = NULL;
+    napi_status status = napi_get_cb_info(env, info, &argc, argv, NULL, &data);
+    if (status != napi_ok) {
+        napi_throw_error(env, UNKNOWN_ERROR, "cb_vl53l5cx_comms_init");
         return NULL;
     }
 
-    uint32_t device_ndx = 0;
-    napi_get_value_uint32(env, argv[0], &device_ndx);
-    VL53L5CX_Configuration* config = 
-        ((VL53L5CX_Configuration*) data) + device_ndx;
-    
+    // cfg slot
+    uint32_t device_ndx;
+    status = napi_get_value_uint32(env, argv[0], &device_ndx);
+    if (status != napi_ok) {
+        napi_throw_error(env, ARGUMENT_ERROR, "Couldn't get cfg_slot");
+        return NULL;
+    }
+    uint32_t bus = 0;
+    if (argc > 1) {
+        // bus number
+        status = napi_get_value_uint32(env, argv[1], &bus);
+        if (status != napi_ok) {
+            napi_throw_error(env, ARGUMENT_ERROR, "Couldn't get bus nr");
+            return NULL;
+        }
+    }
+
+    // Open correct device file
+    char i2c_device_file[20];
+    snprintf(i2c_device_file, 20, "/dev/i2c-%d", bus);
+    int fd = open(i2c_device_file, O_RDWR);
+    if (fd < 0) {
+        perror("cb_vl53l5cx_comms_init");
+        napi_throw_error(env, "Error opening file",
+                         "Can't open file at cb_vl53l5cx_comms_init");
+        return NULL;
+    }
+
+    VL53L5CX_Configuration* config =
+        ((VL53L5CX_Configuration*)data) + device_ndx;
+
+    config->platform.fd = fd;
+
     uint8_t comms_awry = vl53l5cx_comms_init(&config->platform);
-    if(comms_awry) {
+    if (comms_awry) {
         char err[MAX_LEN_ERROR] = {0};
-        snprintf(
-            err, 
-            MAX_LEN_ERROR-1, 
-            "couldn't establish comms with vl53l5cx at %hhx (ndx %u)", 
-            config->platform.address,
-            device_ndx
-        );
-        napi_throw_error(
-            env, 
-            INIT_COMMS_ERROR, 
-            err
-        );
+        snprintf(err, MAX_LEN_ERROR,
+                 "couldn't establish comms with vl53l5cx at %hx (ndx %u)",
+                 config->platform.address, device_ndx);
+        napi_throw_error(env, INIT_COMMS_ERROR, err);
     }
     return NULL;
 }
