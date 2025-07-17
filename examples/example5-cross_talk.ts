@@ -6,7 +6,7 @@ export async function sleep(ms: number): Promise<void> {
 
 async function example5() {
     const cfg = 0;
-    vl53l5cx.comms_init(cfg); // init comms
+    vl53l5cx.comms_init(cfg, 3); // init comms
     vl53l5cx.init(cfg); // init device
 
     console.log("Sensor cross talk calibration starting..");

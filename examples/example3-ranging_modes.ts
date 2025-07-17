@@ -6,7 +6,7 @@ export async function sleep(ms: number): Promise<void> {
 
 async function example3() {
     const cfg = 0;
-    vl53l5cx.comms_init(cfg); // init comms
+    vl53l5cx.comms_init(cfg, 3); // init comms
     vl53l5cx.init(cfg); // init device
 
     vl53l5cx.set_ranging_mode(cfg, vl53l5cx.VL53L5CX_RANGING_MODE_AUTONOMOUS);

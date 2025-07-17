@@ -2,7 +2,7 @@ import { bindings as vl53l5cx } from "..";
 
 function example2() {
     const cfg = 0;
-    vl53l5cx.comms_init(cfg);
+    vl53l5cx.comms_init(cfg, 3);
     vl53l5cx.init(cfg); // init device
 
     // Change resolution to 8x8
