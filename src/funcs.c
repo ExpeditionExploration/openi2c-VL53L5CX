@@ -5,6 +5,8 @@
 #include <stdio.h>
 #include <vl53l5cx_api.h>
 
+#include "error.h"
+#include "js_native_api.h"
 #include "vl53l5cx_plugin_xtalk.h"
 
 /* Maximum length of formatted error message. */
@@ -222,9 +224,6 @@ napi_value cb_vl53l5cx_comms_init(napi_env env, napi_callback_info info) {
  */
 
 /// @brief Is the sensor alive? In case of a problem throws an error.
-///        Sensor may have multiple errors, but _only one_ error will be thrown.
-///        For such cases see `drv_status` and compare to the error values in
-///        `vl53lcx_api.h` in the Linux driver.
 /// @param env Node environment
 /// @param info
 /// @return Nothing
@@ -236,7 +235,11 @@ napi_value cb_vl53l5cx_is_alive(napi_env env, napi_callback_info info) {
     napi_value argv[MAX_ARGUMENTS] = {NULL};
 
     bool success = parse_args(env, info, &argc, argv, &this, &data, 1, 1);
-    if (!success) { return NULL; }
+    if (!success) {
+        napi_throw_error(env, ARGUMENT_ERROR,
+                         "Couldn't parse args in cb_vl53l5cx_is_alive()");
+        return NULL;
+    }
 
     uint32_t device_ndx = 0;
     napi_get_value_uint32(env, argv[0], &device_ndx);
@@ -249,8 +252,8 @@ napi_value cb_vl53l5cx_is_alive(napi_env env, napi_callback_info info) {
     if (!is_alive || drv_status) {
         char err[MAX_LEN_ERROR] = {0};
         snprintf(err, MAX_LEN_ERROR - 1,
-                 "VL53L5CX not detected at address 0x%hhx",
-                 conf->platform.address);
+                 "VL53L5CX not detected at address 0x%hx, drv_status: %hhd",
+                 conf->platform.address, is_alive);
         napi_throw_error(env, NO_SENSOR, err);
     }
     return NULL;
