@@ -309,14 +309,22 @@ napi_value cb_vl53l5cx_check_data_ready(napi_env env, napi_callback_info info) {
     napi_value argv[MAX_ARGUMENTS] = {NULL};
 
     bool success = parse_args(env, info, &argc, argv, &this, &data, 1, 1);
-    if (!success) { return NULL; }
+    if (!success) {
+        napi_throw_error(env, ARGUMENT_ERROR, "cb_vl53l5cx_check_data_ready");
+        return NULL;
+    }
 
     uint32_t device_ndx = 0;
     napi_get_value_uint32(env, argv[0], &device_ndx);
     VL53L5CX_Configuration* conf = ((VL53L5CX_Configuration*)data) + device_ndx;
 
     uint8_t is_ready = 0;
-    vl53l5cx_check_data_ready(conf, &is_ready);
+    uint8_t code = vl53l5cx_check_data_ready(conf, &is_ready);
+    if (code) {
+        napi_throw_error(env, UNKNOWN_ERROR,
+                         "vl53l5cx_check_data_ready failed");
+        return NULL;
+    }
     is_ready ? napi_get_boolean(env, true, &ret_val)
              : napi_get_boolean(env, false, &ret_val);
 
