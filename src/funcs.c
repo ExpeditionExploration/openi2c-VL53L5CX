@@ -750,7 +750,12 @@ napi_value cb_vl53l5cx_set_ranging_frequency_hz(napi_env env,
     napi_value argv[MAX_ARGUMENTS] = {NULL};
 
     bool success = parse_args(env, info, &argc, argv, &this, &data, 2, 2);
-    if (!success) { return NULL; }
+    if (!success) {
+        napi_throw_error(
+            env, ARGUMENT_ERROR,
+            "Error parsing args in cb_vl53l5cx_set_ranging_frequency_hz");
+        return NULL;
+    }
 
     uint32_t cfg_slot;
     uint32_t frequency;
@@ -774,7 +779,13 @@ napi_value cb_vl53l5cx_set_ranging_frequency_hz(napi_env env,
 
     // Need resolution to check the input frequency is sane.
     uint8_t resolution = 0;
-    vl53l5cx_get_resolution(conf, &resolution);
+    uint8_t code = vl53l5cx_get_resolution(conf, &resolution);
+    if (code) {
+        napi_throw_error(env, UNKNOWN_ERROR,
+                         "vl53l5cx_get_resolution returned with error code in "
+                         "cb_vl53l5cx_set_ranging_frequency_hz");
+        return NULL;
+    }
     if (((VL53L5CX_RESOLUTION_8X8 == (uint8_t)resolution) &&
          (frequency < 1 || frequency > 15)) ||
         ((VL53L5CX_RESOLUTION_4X4 == (uint8_t)resolution) &&
@@ -784,9 +795,8 @@ napi_value cb_vl53l5cx_set_ranging_frequency_hz(napi_env env,
         return NULL;
     }
 
-    uint8_t res_status =
-        vl53l5cx_set_ranging_frequency_hz(conf, (uint8_t)frequency);
-    if (res_status) {
+    code = vl53l5cx_set_ranging_frequency_hz(conf, (uint8_t)frequency);
+    if (code) {
         napi_throw_error(env, ERROR_CHANGING_SETTING,
                          "Couldn't change sensing frequency.");
     }
