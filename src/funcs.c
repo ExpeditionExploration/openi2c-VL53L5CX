@@ -371,18 +371,39 @@ napi_value cb_vl53l5cx_get_ranging_data(napi_env env, napi_callback_info info) {
     napi_value argv[MAX_ARGUMENTS] = {NULL};
 
     bool success = parse_args(env, info, &argc, argv, &this, &data, 1, 1);
-    if (!success) { return NULL; }
+    if (!success) {
+        napi_throw_error(env, ARGUMENT_ERROR,
+                         "Error happened in cb_vl53l5cx_get_ranging_data");
+        return NULL;
+    }
 
     uint32_t device_ndx = 0;
-    napi_get_value_uint32(env, argv[0], &device_ndx);
+    status = napi_get_value_uint32(env, argv[0], &device_ndx);
+    if (status != napi_ok) {
+        napi_throw_error(
+            env, VALUE_NAPI_ERROR,
+            "Couldn't convert value to uint32 in cb_vl53l5cx_get_ranging_data");
+        return NULL;
+    }
     VL53L5CX_Configuration* config =
         ((VL53L5CX_Configuration*)data) + device_ndx;
 
     /* Returned object */
     VL53L5CX_ResultsData results = {0};
-    vl53l5cx_get_ranging_data(config, &results);
-    napi_value ret_results = NULL;
-    napi_create_object(env, &ret_results);
+    uint8_t code = vl53l5cx_get_ranging_data(config, &results);
+    if (code) {
+        napi_throw_error(env, UNKNOWN_ERROR,
+                         "vl53l5cx_get_ranging_data returned with error code");
+        return NULL;
+    }
+    napi_value ret_results;
+    status = napi_create_object(env, &ret_results);
+    if (status != napi_ok) {
+        napi_throw_error(
+            env, VALUE_NAPI_ERROR,
+            "Couldn't create object in cb_vl53l5cx_get_ranging_data");
+        return NULL;
+    }
 
     /* siliconTempC prop */
     napi_value silicon_temp_c = NULL;
@@ -397,7 +418,7 @@ napi_value cb_vl53l5cx_get_ranging_data(napi_env env, napi_callback_info info) {
     napi_set_named_property(env, ret_results, "chipTempC", silicon_temp_c);
 
     /* Scan zones */
-    napi_value scan_zones = NULL;
+    napi_value scan_zones;
     uint8_t resolution;
     uint8_t rm_status = vl53l5cx_get_resolution(config, &resolution);
     // If resolution is not set to the device, it defaults to 16 zones.
@@ -438,7 +459,13 @@ napi_value cb_vl53l5cx_get_ranging_data(napi_env env, napi_callback_info info) {
                              "cb_vl53l5cx_get_ranging_data");
             return NULL;
         }
-        napi_set_named_property(env, zone, "zoneIndex", zone_index);
+        status = napi_set_named_property(env, zone, "zoneIndex", zone_index);
+        if (status != napi_ok) {
+            napi_throw_error(
+                env, VALUE_NAPI_ERROR,
+                "Couldn't set named prop in cb_vl53l5cx_get_ranging_data");
+            return NULL;
+        }
 
 /* Measured distance */
 #ifndef VL53L5CX_DISABLE_DISTANCE_MM
@@ -554,34 +581,82 @@ napi_value cb_vl53l5cx_get_ranging_data(napi_env env, napi_callback_info info) {
             napi_value distance_millimeters;
             napi_value signal_per_spad;
             napi_value range_sigma_millimeters;
-            status = napi_ok; // 0
-            status |= napi_create_uint32(env, (uint32_t)target_status_c,
-                                         &target_status);
-            status |= napi_create_int32(env, (int32_t)distance_millimeters_c,
-                                        &distance_millimeters);
-            status |=
+
+            status = napi_create_uint32(env, (uint32_t)target_status_c,
+                                        &target_status);
+            if (status != napi_ok) {
+                napi_throw_error(
+                    env, VALUE_NAPI_ERROR,
+                    "Couldn't create target_status in ..._get_ranging_data()");
+                return NULL;
+            }
+            status = napi_create_int32(env, (int32_t)distance_millimeters_c,
+                                       &distance_millimeters);
+            if (status != napi_ok) {
+                napi_throw_error(env, VALUE_NAPI_ERROR,
+                                 "Couldn't create distance_millimeters in "
+                                 "..._get_ranging_data()");
+                return NULL;
+            }
+
+            status =
                 napi_create_uint32(env, signal_per_spad_c, &signal_per_spad);
-            status |= napi_create_uint32(env, (uint32_t)range_sigma_mm_c,
-                                         &range_sigma_millimeters);
+            if (status != napi_ok) {
+                napi_throw_error(env, VALUE_NAPI_ERROR,
+                                 "Couldn't create signal_per_spad in "
+                                 "..._get_ranging_data()");
+                return NULL;
+            }
+
+            status = napi_create_uint32(env, (uint32_t)range_sigma_mm_c,
+                                        &range_sigma_millimeters);
             if (status != napi_ok) {
                 napi_throw_error(env, VALUE_NAPI_ERROR, "fn: get_ranging_data");
                 return NULL;
             }
             status = napi_set_named_property(env, target, "targetStatus",
                                              target_status);
-            status |= napi_set_named_property(
-                env, target, "distanceMillimeters", distance_millimeters);
-            status |= napi_set_named_property(env, target, "signalPerSpad",
-                                              signal_per_spad);
-            status |= napi_set_named_property(
-                env, target, "rangeSigmaMillimeters", range_sigma_millimeters);
             if (status != napi_ok) {
-                napi_throw_error(env, NAMED_PROPERTY_NOT_SET,
-                                 "fn: get_ranging_data");
+                napi_throw_error(env, VALUE_NAPI_ERROR,
+                                 "Couldn't set prop targetStatus in "
+                                 "..._get_ranging_data()");
                 return NULL;
             }
 
-            napi_set_element(env, targets_array, j, target);
+            status = napi_set_named_property(env, target, "distanceMillimeters",
+                                             distance_millimeters);
+            if (status != napi_ok) {
+                napi_throw_error(env, VALUE_NAPI_ERROR,
+                                 "Couldn't set prop distanceMillimeters in "
+                                 "..._get_ranging_data()");
+                return NULL;
+            }
+
+            status = napi_set_named_property(env, target, "signalPerSpad",
+                                             signal_per_spad);
+            if (status != napi_ok) {
+                napi_throw_error(env, VALUE_NAPI_ERROR,
+                                 "Couldn't set prop signalPerSpad in "
+                                 "..._get_ranging_data()");
+                return NULL;
+            }
+
+            status = napi_set_named_property(
+                env, target, "rangeSigmaMillimeters", range_sigma_millimeters);
+            if (status != napi_ok) {
+                napi_throw_error(env, VALUE_NAPI_ERROR,
+                                 "Couldn't set prop rangeSigmaMillimeters in "
+                                 "..._get_ranging_data()");
+                return NULL;
+            }
+
+            status = napi_set_element(env, targets_array, j, target);
+            if (status != napi_ok) {
+                napi_throw_error(
+                    env, VALUE_NAPI_ERROR,
+                    "Couldn't set element in ..._get_ranging_data()");
+                return NULL;
+            }
         }
         status =
             napi_set_named_property(env, zone, "targetData", targets_array);
@@ -600,7 +675,14 @@ napi_value cb_vl53l5cx_get_ranging_data(napi_env env, napi_callback_info info) {
     }
 
     /* Assign zones array to the results */
-    napi_set_named_property(env, ret_results, "scanZones", scan_zones);
+    status = napi_set_named_property(env, ret_results, "scanZones", scan_zones);
+    if (status != napi_ok) {
+        napi_throw_error(
+            env, VALUE_NAPI_ERROR,
+            "Couldn't set prop scanZones in ..._get_ranging_data()");
+        return NULL;
+    }
+
     return ret_results;
 }
 
