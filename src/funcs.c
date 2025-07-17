@@ -2,6 +2,7 @@
 
 #include <fcntl.h>
 #include <node_api.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <vl53l5cx_api.h>
 
@@ -271,11 +272,14 @@ napi_value cb_vl53l5cx_start_ranging(napi_env env, napi_callback_info info) {
     napi_value argv[MAX_ARGUMENTS] = {NULL};
 
     bool success = parse_args(env, info, &argc, argv, &this, &data, 1, 1);
-    if (!success) { return NULL; }
+    if (!success) {
+        napi_throw_error(env, ARGUMENT_ERROR, "cb_vl53l5cx_start_ranging");
+        return NULL;
+    }
 
     uint32_t device_ndx = 0;
     status = napi_get_value_uint32(env, argv[0], &device_ndx);
-    if (status != napi_ok) {
+    if (status != napi_ok || device_ndx > 9) {
         napi_throw_error(env, ARGUMENT_ERROR,
                          "Must give device index (0-9) as argument. fn: "
                          "cb_vl53l5cx_start_ranging");
@@ -283,7 +287,13 @@ napi_value cb_vl53l5cx_start_ranging(napi_env env, napi_callback_info info) {
     }
     VL53L5CX_Configuration* conf = ((VL53L5CX_Configuration*)data) + device_ndx;
 
-    vl53l5cx_start_ranging(conf);
+    uint8_t code = vl53l5cx_start_ranging(conf);
+    if (code) {
+        char err[200];
+        snprintf(err, 200,
+                 "vl53l5cx_start_ranging returned with error code: %hhd", code);
+        napi_throw_error(env, UNKNOWN_ERROR, err);
+    }
     return NULL;
 }
 
