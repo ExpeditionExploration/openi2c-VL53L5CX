@@ -9,9 +9,9 @@ function example2() {
     vl53l5cx.set_resolution(cfg, vl53l5cx.VL53L5CX_RESOLUTION_8X8);
 
     /* Set ranging frequency to 6Hz.
-	 * Using 4x4, min frequency is 1Hz and max is 60Hz
-	 * Using 8x8, min frequency is 1Hz and max is 15Hz
-	 */
+     * Using 4x4, min frequency is 1Hz and max is 60Hz
+     * Using 8x8, min frequency is 1Hz and max is 15Hz
+     */
     vl53l5cx.set_ranging_frequency_hz(cfg, 6);
 
     /* Set target to closest */
