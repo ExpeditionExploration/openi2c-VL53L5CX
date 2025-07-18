@@ -910,7 +910,11 @@ napi_value cb_vl53l5cx_init(napi_env env, napi_callback_info info) {
     napi_value argv[MAX_ARGUMENTS] = {NULL};
 
     bool success = parse_args(env, info, &argc, argv, &this, &data, 1, 1);
-    if (!success) { return NULL; }
+    if (!success) {
+        napi_throw_error(env, ARGUMENT_ERROR,
+                         "Argument error in cb_vl53l5cx_init");
+        return NULL;
+    }
 
     uint32_t cfg_slot;
 
