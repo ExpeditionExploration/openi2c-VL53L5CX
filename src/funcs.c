@@ -944,7 +944,12 @@ napi_value cb_vl53l5cx_get_integration_time_ms(napi_env env,
     napi_value argv[MAX_ARGUMENTS] = {NULL};
 
     bool success = parse_args(env, info, &argc, argv, &this, &data, 1, 1);
-    if (!success) { return NULL; }
+    if (!success) {
+        napi_throw_error(
+            env, ARGUMENT_ERROR,
+            "Argument error in cb_vl53l5cx_get_integration_time_ms");
+        return NULL;
+    }
 
     uint32_t cfg_slot;
     status = napi_get_value_uint32(env, argv[0], &cfg_slot);
