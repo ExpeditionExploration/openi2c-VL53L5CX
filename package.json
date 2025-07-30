@@ -7,6 +7,7 @@
     "example": "examples"
   },
   "scripts": {
+    "prepare": "node-gyp rebuild && tsc",
     "clean": "node-gyp clean",
     "debug-build": "node-gyp rebuild --debug && tsc",
     "build": "node-gyp rebuild && tsc",
@@ -16,7 +17,8 @@
     "configure": "node-gyp configure && tsc"
   },
   "keywords": [
-    "VL53L5CX", "OpenI2C"
+    "VL53L5CX",
+    "OpenI2C"
   ],
   "author": "",
   "license": "MIT",
