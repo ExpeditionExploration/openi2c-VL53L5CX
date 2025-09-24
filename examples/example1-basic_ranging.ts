@@ -1,8 +1,8 @@
 import { bindings as vl53l5cx } from "..";
 
-function example1() {
+async function example1() {
     const cfg = 0;
-    vl53l5cx.comms_init(cfg); // init comms
+    vl53l5cx.comms_init(cfg, 3); // init comms
     vl53l5cx.init(cfg); // init device
     vl53l5cx.start_ranging(cfg);
 

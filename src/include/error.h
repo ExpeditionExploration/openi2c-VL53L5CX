@@ -25,7 +25,6 @@ extern const char* XTALK_CALIBRATION_FAILED;
 extern const char* XTALK_CANNOT_FETCH_DATA;
 extern const char* XTALK_CANNOT_STORE_DATA;
 
-
 /**
  * Node-API side of errors.
  */

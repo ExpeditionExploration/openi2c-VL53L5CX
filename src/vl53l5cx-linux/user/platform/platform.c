@@ -61,12 +61,13 @@ int32_t vl53l5cx_comms_init(VL53L5CX_Platform * p_platform)
 #else
 	/* Create sensor at default i2c address */
 	p_platform->address = 0x52;
-	p_platform->fd = open("/dev/i2c-1", O_RDONLY);
-	if (p_platform->fd == -1) {
-		LOG("Failed to open /dev/i2c-1\n");
-		return VL53L5CX_COMMS_ERROR;
+	if (!p_platform->fd) {
+		p_platform->fd = open("/dev/i2c-1", O_RDONLY);
+		if (p_platform->fd == -1) {
+			LOG("Failed to open /dev/i2c-1\n");
+			return VL53L5CX_COMMS_ERROR;
+		}
 	}
-
 	if (ioctl(p_platform->fd, I2C_SLAVE, p_platform->address) <0) {
 		LOG("Could not speak to the device on the i2c bus\n");
 		return VL53L5CX_COMMS_ERROR;

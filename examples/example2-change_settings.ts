@@ -2,16 +2,16 @@ import { bindings as vl53l5cx } from "..";
 
 function example2() {
     const cfg = 0;
-    vl53l5cx.comms_init(cfg);
+    vl53l5cx.comms_init(cfg, 3);
     vl53l5cx.init(cfg); // init device
 
     // Change resolution to 8x8
     vl53l5cx.set_resolution(cfg, vl53l5cx.VL53L5CX_RESOLUTION_8X8);
 
     /* Set ranging frequency to 6Hz.
-	 * Using 4x4, min frequency is 1Hz and max is 60Hz
-	 * Using 8x8, min frequency is 1Hz and max is 15Hz
-	 */
+     * Using 4x4, min frequency is 1Hz and max is 60Hz
+     * Using 8x8, min frequency is 1Hz and max is 15Hz
+     */
     vl53l5cx.set_ranging_frequency_hz(cfg, 6);
 
     /* Set target to closest */

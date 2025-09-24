@@ -1,12 +1,12 @@
 import { bindings as vl53l5cx } from "..";
 
-export async function sleep(ms:number): Promise<void> {
+export async function sleep(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 async function example4() {
     const cfg = 0;
-    vl53l5cx.comms_init(cfg); // init comms
+    vl53l5cx.comms_init(cfg, 3); // init comms
     vl53l5cx.init(cfg); // init device
 
     // Going to sleep

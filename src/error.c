@@ -1,6 +1,7 @@
 
-#include <node_api.h>
 #include "error.h"
+
+#include <node_api.h>
 
 const char* INIT_ERROR = "initialization error";
 const char* INVALID_PARAM_ERROR = "invalid param";
