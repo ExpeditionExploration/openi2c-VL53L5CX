@@ -1,7 +1,7 @@
 #ifndef __ERROR_H
 #define __ERROR_H
 
-#include <node/node_api.h>
+#include <node_api.h>
 #include <stdint.h>
 
 /**
